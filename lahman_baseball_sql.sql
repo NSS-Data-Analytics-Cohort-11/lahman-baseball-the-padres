@@ -35,7 +35,7 @@ GROUP BY namefirst, namelast, height, t.name
 --Sort this list in descending order by the total salary earned. Which Vanderbilt player earned the most money in the majors?
 
 SELECT 
-	namefirst, namelast, schoolname, SUM(salary) AS total_salary,lgid
+	Distinct namefirst, namelast, schoolname, SUM(distinct salary)::int::MONEY AS total_salary
 FROM people p
 INNER JOIN collegeplaying c
 ON p.playerid = c.playerid
@@ -44,9 +44,8 @@ ON c.schoolid = sc.schoolid
 INNER JOIN salaries s
 ON p.playerid = s.playerid
 where schoolname = 'Vanderbilt University' 
-GROUP BY namefirst,namelast,schoolname,lgid
+GROUP BY namefirst,namelast,schoolname
 ORDER BY total_salary DESC
-
 
 /*SELECT 
 	namefirst,namelast, sum(salary), lgid
@@ -61,13 +60,53 @@ GROUP BY namefirst, namelast, lgid*/
  SELECT * 
  FROM fielding
  
-SELECT COUNT(po), yearid,
+SELECT sum(po),
  	CASE
  		WHEN pos = 'OF' THEN 'Outfield'
 		WHEN POS  in ('SS','1B', '2B','3B') THEN 'Infield'
 		WHEN pos  in ('P', 'C') THEN 'Battery' 
 	END as fielding_position
-FROM Fielding
+FROM Fielding  
 WHERE yearid = 2016
-GROUP BY POS, yearid
+GROUP BY fielding_position
+
+--Q5. Find the  average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. 
+---   Do the same for home runs per game. Do you see any trends
+/*SELECT p.avg(so), g, yearid
+FROM batting b
+INNER JOIN pitching p
+ON b.playerid = p.playerid
+WHERE yearid >= 1920
+ORDER BY yearid*/
+
+
+SELECT
+	(yearid/10 * 10) as decade,
+	ROUND(sum(SO)*1.0/SUM(g),2) as avg_strikeout,
+	ROUND(sum(HR)*1.0/SUM(g),2) as avg_homeruns
+FROM teams
+WHERE yearid >= 1920
+GROUP BY decade
+ORDER BY decade
+	
+--Q6. Find the player--
+
+/*SELECT p.namefirst, p.playerid, p.namelast, sb,cs /*(sb/sb+ cs)*100*/
+FROM batting b
+INNER JOIN people p
+ON p.playerid = b.playerid
+WHERE SB*/
+
+SELECT    namefirst
+		, namelast
+		, ROUND(sb/NULLIF((sb+cs)*1.0,0)*100,2) AS succesful_stealing
+FROM batting
+INNER JOIN people
+USING (playerid)
+WHERE sb/NULLIF((sb+cs),0)*100 IS NOT NULL
+AND (sb+cs) >= 20
+AND yearid = 2016
+ORDER BY succesful_stealing DESC;
+
+
 
