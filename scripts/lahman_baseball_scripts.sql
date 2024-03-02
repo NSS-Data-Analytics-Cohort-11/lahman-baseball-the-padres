@@ -126,3 +126,178 @@ ORDER BY successful_steals DESC
 
 --ANSWER QUESTION 6: run code above--
 
+
+--QUESTION 7: From 1970 – 2016, what is the largest number of wins for a team that did not win the world series?
+--What is the smallest number of wins for a team that did win the world series? 
+--Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case
+--Then redo your query, excluding the problem year
+--How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? 
+--What percentage of the time?
+
+--MAX wins per season by a single team--
+SELECT yearid
+	, MAX(w)
+FROM teams
+WHERE yearid >= 1970
+GROUP BY yearid
+ORDER BY yearid
+
+--ANSWER 7 QUERY: OPTION 1--
+WITH wins_and_ws AS
+					/* if a team won WS and had the most wins that year */
+					(SELECT yearid,
+							CASE WHEN wswin = 'Y' AND w = MAX(w) OVER(PARTITION BY yearid) THEN 1		/* INTEGER: 1=yes, 0=no */
+								ELSE 0 END AS winner_and_highest
+					FROM teams
+					WHERE yearid >= 1970)
+
+SELECT SUM(winner_and_highest) AS num_occurances,																/* number of times WS winner team had the most wins */
+		ROUND(SUM(winner_and_highest) / COUNT(DISTINCT yearid)::NUMERIC * 100, 2) || '%' AS percent_occured		/* percentage team w/ most wins won WS */
+FROM wins_and_ws;
+--QUESTION 7 QUERY: OPTION 2--
+with most_wins as
+	(select yearid,
+	 		max(w) as w
+	 from teams
+	 where yearid>=1970
+	 group by yearid
+	 order by yearid
+	),
+	most_win_teams as
+	(select yearid,
+	 		name,
+	 		wswin
+	 from teams
+	 inner join most_wins
+	 using (yearid,w)
+	)
+--select * from most_wins_teams
+select (select count(*)
+		from most_win_teams
+		where wswin = 'Y') * 100.0 / (select count(*)
+									  from most_win_teams);
+
+--QUESTION 7: Why such a low number of wins in 1981?--
+
+SELECT yearid
+	, wswin
+	, teamid
+	, w
+	, name
+	, G
+FROM teams
+WHERE yearid >= 1970
+	AND wswin = 'Y'
+ORDER BY w ASC
+
+/*SELECT yearid --- number of games per year/season per team ordered ASC (lowest number of games at the bottom)
+	, teamid
+	, G
+FROM teams
+WHERE yearid >= 1970
+ORDER BY G ASC*/
+
+
+--QUESTION 8: Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016
+--(where average attendance is defined as total attendance divided by number of games). 
+--Only consider parks where there were at least 10 games played. 
+--Report the park name, team name, and average attendance. 
+--Repeat for the lowest 5 average attendance.
+
+--avg attendance = attendance/games--
+avg_attendance AS
+	(SELECT team
+	 	,(attendance)/(games) AS attendance
+		FROM homegames)
+		
+--top/bottom park name, team, attendance with UNION--
+WITH top_5 AS
+	(SELECT  p.park_name
+		, t.name
+		, (hg.attendance)/(hg.games) AS avg_attendance
+	FROM homegames AS hg
+	INNER JOIN parks AS p
+		USING (park)
+	INNER JOIN teams AS t
+		ON hg.team = t.teamid
+			AND hg.year = t.yearid
+	WHERE year = 2016
+		AND hg.games >= 10
+	ORDER BY avg_attendance DESC
+	LIMIT 5),
+bottom_5 AS
+	(SELECT  p.park_name
+		, t.name
+		, (hg.attendance)/(hg.games) AS avg_attendance
+	FROM homegames AS hg
+	INNER JOIN parks AS p
+		USING (park)
+	INNER JOIN teams AS t
+		ON hg.team = t.teamid
+			AND hg.year = t.yearid
+	WHERE year = 2016
+		AND hg.games >= 10
+	ORDER BY avg_attendance ASC
+	LIMIT 5)
+SELECT 	*, 'top 5' AS FLAG
+FROM top_5
+UNION
+SELECT *, 'bottom 5' AS FLAG
+FROM bottom_5
+ORDER BY avg_attendance DESC
+
+
+--QUESTION 8: ^ Run query above--
+
+
+--QUESTION 9: Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? 
+--Give their full name and the teams that they were managing when they won the award.
+
+SELECT distinct awardid
+FROM awardsmanagers
+-----
+
+WITH both_league_winners AS (
+	SELECT
+		playerid--, count(DISTINCT lgid)
+	FROM awardsmanagers
+	WHERE awardid = 'TSN Manager of the Year'
+		AND lgid IN ('AL', 'NL')
+	GROUP BY playerid
+	--order by COUNT(DISTINCT lgid) desc
+	HAVING COUNT(DISTINCT lgid) = 2
+	)
+SELECT
+	namefirst || ' ' || namelast AS full_name,
+	yearid,
+	lgid,
+	name
+FROM people
+INNER JOIN both_league_winners
+USING(playerid)
+INNER JOIN awardsmanagers
+USING(playerid)
+INNER JOIN managers
+USING(playerid, yearid, lgid)
+INNER JOIN teams
+USING(teamid, yearid,lgid)
+WHERE awardid = 'TSN Manager of the Year'
+ORDER BY full_name, yearid;
+
+--QUESTION 10: Find all players who hit their career highest number of home runs in 2016. 
+--Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. 
+--Report the players' first and last names and the number of home runs they hit in 2016.
+
+SELECT
+    p.namefirst || ' ' || p.namelast AS player_name,
+    b.hr AS home_runs_2016
+FROM batting AS b
+INNER JOIN people AS p ON b.playerID = p.playerid
+WHERE b.yearid = 2016
+	AND hr > 0
+	AND EXTRACT(YEAR FROM debut::date) <= 2016 - 9
+    AND b.hr = (
+        SELECT MAX(hr)
+        FROM batting
+        WHERE playerid = b.playerid)
+ORDER BY home_runs_2016 DESC;
