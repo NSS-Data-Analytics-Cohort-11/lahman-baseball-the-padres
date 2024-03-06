@@ -345,4 +345,89 @@ WHERE h.career_highest_2016 IS NOT NULL
 	AND DATE_PART('year', p.debut::DATE) <= 2007
 ORDER BY num_hr DESC;
 
-								
+-- **Open-ended questions**
+
+--Q11 Is theere any correlation between number of wins and team salary? Use data from 2000 and later to answer this question. As you do this analysis,
+--keep in mind that salaries across the whole leauge tend to increase together, so you may want to look on a year-by-year basis.
+select name,max(w)
+from teams
+where yearid>=2000
+group by name,w
+order by w desc
+
+select name,w,salary
+from teams
+inner join salaries
+using(yearid,teamid)
+where yearid>=2000 AND salary = (select max(salary)from salaries)
+group by name,salary,w
+order by salary desc
+
+
+SELECT 
+		 t.yearid,t.teamid, name, w, SUM(salary) AS total_salary
+FROM teams t
+INNER JOIN salaries s
+	USING (yearid,teamid)
+WHERE t.yearid >= 2000
+GROUP BY t.yearid, t.teamid, name,w 
+ORDER BY yearid, total_salary, w  desc
+		-- to check if there is a correlation b/n wins and salary 
+		
+						WITH team_salary as
+								(SELECT 
+						 t.yearid,t.teamid,name, w, SUM(salary) AS total_salary
+				FROM teams t
+				INNER JOIN salaries s
+					USING (yearid,teamid)
+				WHERE t.yearid >= 2000
+				GROUP BY t.yearid, t.teamid, name,w 
+				ORDER BY yearid, w, total_salary desc)
+	SELECT yearid, w,total_salary--CORR(w, total_salary)
+	FROM team_salary
+	--GROUP BY yearid
+	
+-- Answer: The correlation cofficient = .34 which indicates a low correlation. 
+
+
+
+
+
+
+
+
+
+
+--Q12. In this question, you will explore the connection between number of wins and attendance. 
+--* Does there appear to be any correlation between attendance at home games and number of wins? </li>
+--* Doest teams that win the world series see a boost in attendance the following year? What about teams that made the playoffs? 
+--Making the playoffs means either being a division winner or a wild card winner.
+
+
+/*select * from teams		
+--a.
+WITH home_games AS
+				(SELECT 
+						yearid, teamid,g, ghome, attendance, w, ROUND(avg(attendance/ghome),2) AS avg_homegame_attendance
+				FROM teams
+				WHERE ghome IS NOT NULL AND attendance > 0 
+				GROUP BY yearid,teamid,g,ghome,attendance,w)
+				
+SELECT CORR(avg_homegame_attendance,w)
+FROM home_games 
+
+--ANSWER: the correlation cofficent is 0.36 which shows a moderate correlation, not strong.
+--b.
+WITH team_wswin AS
+				SELECT 
+						yearid, teamid, name, g, attendance, wswin  
+				FROM teams 
+				WHERE wswin = 'Y' AND attendance > 0 
+				GROUP BY yearid, teamid, name, g, attendance, wswin
+				ORDER BY yearid,attendance */
+				
+
+				
+
+
+
