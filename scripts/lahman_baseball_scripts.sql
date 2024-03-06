@@ -301,3 +301,152 @@ WHERE b.yearid = 2016
         FROM batting
         WHERE playerid = b.playerid)
 ORDER BY home_runs_2016 DESC;
+
+
+/****************
+--SOLO PRESENTATION WORK--
+--Are left-handed pitchers more effective than right handed?
+--How much more rare are left-handers than right?
+-- Are left-handed pitchers more likely to win the Cy Young Award?
+--Are they more likely to make it into the hall of fame?
+*****************/
+SELECT throws
+FROM people
+WHERE throws = 'R'
+
+SELECT DISTINCT playerid
+FROM people
+
+--How much more rare are left-handers than right?--NOTE there is one switch hitter
+--The CTEs below convery the varchar of Throws to integers so that they can be summed
+
+WITH l_throw_count AS
+	(SELECT DISTINCT playerid
+	 	,namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'L' THEN 1 
+		ELSE '0' END AS left_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+	,
+r_throw_count AS
+	(SELECT DISTINCT playerid
+	 	, namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'R' THEN 1 
+		ELSE '0' END AS right_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+SELECT SUM(left_throw_count) AS total_lefthanded
+	, SUM(right_throw_count) AS total_righthanded
+FROM l_throw_count AS l
+INNER JOIN r_throw_count AS r
+	USING (playerid)
+	
+-- Are left-handed pitchers more likely to win the Cy Young Award?--
+
+WITH l_throw_count AS
+	(SELECT DISTINCT playerid
+	 	,namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'L' THEN 1 
+		ELSE '0' END AS left_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+	,
+r_throw_count AS
+	(SELECT DISTINCT playerid
+	 	, namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'R' THEN 1 
+		ELSE '0' END AS right_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+SELECT SUM(left_throw_count) AS total_lefthanded
+	, SUM(right_throw_count) AS total_righthanded
+	, awardid
+FROM l_throw_count AS l
+INNER JOIN r_throw_count AS r
+	USING (playerid)
+INNER JOIN awardsplayers
+	USING (playerid)
+WHERE awardid = 'Cy Young Award'
+GROUP BY awardid
+
+--Are they more likely to make it into the hall of fame?--
+
+WITH l_throw_count AS
+	(SELECT DISTINCT playerid
+	 	,namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'L' THEN 1 
+		ELSE '0' END AS left_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+	,
+r_throw_count AS
+	(SELECT DISTINCT playerid
+	 	, namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'R' THEN 1 
+		ELSE '0' END AS right_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+SELECT SUM(left_throw_count) AS total_lefthanded
+	, SUM(right_throw_count) AS total_righthanded
+	, inducted
+FROM l_throw_count AS l
+INNER JOIN r_throw_count AS r
+	USING (playerid)
+INNER JOIN halloffame
+	USING (playerid)
+GROUP BY inducted
+
+--Pitcher with Highest ERA--
+
+WITH l_throw_count AS
+	(SELECT DISTINCT playerid
+	 	,namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'L' THEN 1 
+		ELSE '0' END AS left_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+	,
+r_throw_count AS
+	(SELECT DISTINCT playerid
+	 	, namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'R' THEN 1 
+		ELSE '0' END AS right_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+SELECT MIN(ERA)
+	, namefirst || ' ' || namelast
+	, playerid
+FROM pitching
+INNER JOIN l_throw_count AS l
+	USING (playerid)
+INNER JOIN r_throw_count AS r
+	USING (playerid)
+WHERE ERA <> 0
+	
+SELECT *
+FROM pitching
+WHERE ERA = 0.31
