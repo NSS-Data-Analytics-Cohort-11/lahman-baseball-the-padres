@@ -317,6 +317,10 @@ WHERE throws = 'R'
 SELECT DISTINCT playerid
 FROM people
 
+SELECT DISTINCT pos
+FROM fielding
+
+
 --How much more rare are left-handers than right?--NOTE there is one switch hitter
 --The CTEs below convery the varchar of Throws to integers so that they can be summed
 
@@ -381,6 +385,44 @@ INNER JOIN awardsplayers
 WHERE awardid = 'Cy Young Award'
 GROUP BY awardid
 
+--Number of Cy Young Awards Per Player--
+
+WITH l_throw_count AS
+	(SELECT DISTINCT playerid
+	 	,namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'L' THEN 1 
+		ELSE '0' END AS left_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+	,
+r_throw_count AS
+	(SELECT DISTINCT playerid
+	 	, namefirst || ' ' || namelast
+		,
+		CASE WHEN throws = 'R' THEN 1 
+		ELSE '0' END AS right_throw_count
+	FROM people
+	INNER JOIN fielding
+	 	USING (playerid)
+	WHERE pos = 'P')
+SELECT DISTINCT (playerid)
+	, COUNT (awardid) AS total_CYA
+	, left_throw_count
+	, right_throw_count
+FROM l_throw_count AS l
+INNER JOIN r_throw_count AS r
+	USING (playerid)
+INNER JOIN awardsplayers
+	USING (playerid)
+WHERE awardid = 'Cy Young Award'
+GROUP BY playerid
+	, left_throw_count
+	, right_throw_count
+ORDER BY total_CYA DESC
+
 --Are they more likely to make it into the hall of fame?--
 
 WITH l_throw_count AS
@@ -437,16 +479,17 @@ r_throw_count AS
 	INNER JOIN fielding
 	 	USING (playerid)
 	WHERE pos = 'P')
-SELECT MIN(ERA)
-	, namefirst || ' ' || namelast
+SELECT ERA
 	, playerid
+	, right_throw_count
+	, left_throw_count
 FROM pitching
 INNER JOIN l_throw_count AS l
 	USING (playerid)
 INNER JOIN r_throw_count AS r
 	USING (playerid)
-WHERE ERA <> 0
-	
+
+
 SELECT *
 FROM pitching
 WHERE ERA = 0.31
