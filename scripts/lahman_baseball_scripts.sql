@@ -493,3 +493,32 @@ INNER JOIN r_throw_count AS r
 SELECT *
 FROM pitching
 WHERE ERA = 0.31
+
+----NEW REVISITED LAHMAN SQL QUESTIONS----
+
+--- Using the Batting table, create a list of all the players who played for more than 1 team in any season.
+--- This would be indicated there being rows where stint >1.
+--- Make sure all playerids are listed only one.
+
+SELECT DISTINCT playerid, stint
+FROM batting
+WHERE stint >1
+
+--- Select the yearid, lgid, Teamid, PlayerID and HR from the Batting table for all players who hit
+--- 20 or more home runs (HR) in 2015 or 2016 and played on the New York Yankees.
+-- Hint: Use teamid NYA in your where statement
+
+SELECT yearid, 
+		lgid, 
+		teamid, 
+		playerid, 
+		hr
+FROM batting
+WHERE teamid = 'NYA' 
+		AND HR >=20 
+		AND (yearid = 2015 OR yearid = 2016)
+
+
+select yearid,lgid, teamid, playerid, HR
+from Batting
+where HR >= 20 and yearid IN (2015,2016) and teamid='NYA'
