@@ -522,3 +522,47 @@ WHERE teamid = 'NYA'
 select yearid,lgid, teamid, playerid, HR
 from Batting
 where HR >= 20 and yearid IN (2015,2016) and teamid='NYA'
+
+--- Using the SALARIES table, write a query that selects the yearid, teamid, playerid and salary 
+--- (formatted with $ and . ) 
+--- for everyone who played for the Boston Red Sox (teamid = BOS) in 2016
+
+SELECT *
+FROM salaries
+
+SELECT CONCAT('$', salary,'.') AS salary2,
+	yearid,
+	teamid,
+	playerid
+FROM salaries
+WHERE teamid = 'BOS' AND yearid = 2016
+
+---Modify the query above to include the players first and last name (namefirst and namelast) 4
+-- from the PEOPLE table.
+
+SELECT CONCAT('$', salary,'.') AS salary2,
+	CONCAT(namefirst,' ',namelast) AS name,
+	yearid,
+	teamid,
+	salaries.playerid
+FROM salaries
+JOIN people 
+ON salaries.playerid = people.playerid
+WHERE teamid = 'BOS' AND yearid = 2016
+
+--- Modify the query above to also include the # of home runs (HR) from the batting table and 
+--- the positions each player played (POS column from the FIELDING table) for the first team the 
+--- player played for in 2016  (stint = 1). 
+--- Note the correct answer returns 33 rows (see message tab in SSMS). 
+
+
+SELECT CONCAT('$', salary,'.') AS salary2,
+	CONCAT(namefirst,' ',namelast) AS name,
+	yearid,
+	teamid,
+	salaries.playerid
+FROM salaries
+JOIN people 
+ON salaries.playerid = people.playerid
+WHERE teamid = 'BOS' AND yearid = 2016
+
