@@ -555,7 +555,6 @@ WHERE teamid = 'BOS' AND yearid = 2016
 --- player played for in 2016  (stint = 1). 
 --- Note the correct answer returns 33 rows (see message tab in SSMS). 
 
-
 SELECT CONCAT('$', salary,'.') AS salary2,
 	CONCAT(namefirst,' ',namelast) AS name,
 	yearid,
@@ -565,4 +564,37 @@ FROM salaries
 JOIN people 
 ON salaries.playerid = people.playerid
 WHERE teamid = 'BOS' AND yearid = 2016
+
+--- Did any of these players attend University of Iowa? If so what were their names?
+
+SELECT DISTINCT playerid,
+	namefirst,
+	namelast,
+	schoolname
+FROM people
+JOIN collegeplaying
+USING (playerid)
+JOIN schools
+ON collegeplaying.schoolid = schools.schoolid
+WHERE schoolname = 'University of Iowa'
+
+--- Did any of the players that attended Iowa win any awards
+
+WITH iowa_players AS 
+	(SELECT DISTINCT playerid,
+	namefirst,
+	namelast,
+	schoolname
+FROM people
+JOIN collegeplaying
+USING (playerid)
+JOIN schools
+ON collegeplaying.schoolid = schools.schoolid
+WHERE schoolname = 'University of Iowa'
+	)
+
+
+
+
+
 
